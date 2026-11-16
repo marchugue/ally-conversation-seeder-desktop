@@ -1,7 +1,8 @@
 {
   "name": "ally-conversation-seeder-desktop",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Minimal Admin-only Desktop Electron + React.js Conversation Seeder for ALLY-JIS centralized backend",
+  "author": "ALLY-JIS",
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
@@ -9,7 +10,48 @@
     "electron": "node electron/launch.cjs",
     "electron:start": "npm run build && node electron/launch.cjs",
     "electron:dev": "concurrently -k \"vite\" \"wait-on http://127.0.0.1:5175 && node electron/launch.cjs --dev\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "dist:win": "npm run build && electron-builder --win --x64 --publish never",
+    "dist:win:portable": "npm run build && electron-builder --win portable --x64 --publish never",
+    "dist:linux": "npm run build && electron-builder --linux --publish never"
+  },
+  "build": {
+    "appId": "com.allyjis.conversationseeder",
+    "productName": "ALLY-JIS Conversation Seeder",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "build/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "requestedExecutionLevel": "asInvoker",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "target": ["AppImage", "tar.gz"],
+      "category": "Utility"
+    }
   },
   "dependencies": {
     "lucide-react": "^0.475.0",
@@ -22,9 +64,9 @@
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.2",
     "electron": "^35.0.0",
+    "electron-builder": "^25.1.8",
     "typescript": "^5.7.3",
     "vite": "^6.2.0",
     "wait-on": "^8.0.3"
   }
 }
-

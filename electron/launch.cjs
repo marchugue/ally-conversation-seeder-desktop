@@ -5,16 +5,22 @@ const electronBinary = require('electron');
 const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
 
-const args = [path.join(__dirname, '..'), '--no-sandbox', ...process.argv.slice(2)];
+const extraArgs = process.platform === 'linux' ? ['--no-sandbox'] : [];
+const args = [path.join(__dirname, '..'), ...extraArgs, ...process.argv.slice(2)];
+
 const child = spawn(electronBinary, args, {
   stdio: 'inherit',
   env,
 });
 
 child.on('exit', (code, signal) => {
-  if (signal) {
+  if (typeof code === 'number') {
+    process.exit(code);
+    return;
+  }
+  if (signal && process.platform !== 'win32') {
     process.kill(process.pid, signal);
     return;
   }
-  process.exit(code ?? 0);
+  process.exit(1);
 });
