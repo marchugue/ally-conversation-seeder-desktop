@@ -1,7 +1,10 @@
 const { app, BrowserWindow, ipcMain, net } = require('electron');
 const path = require('path');
 
-const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL || (process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:5175' : null);
+app.disableHardwareAcceleration();
+
+const isDev = process.argv.includes('--dev') || process.env.NODE_ENV === 'development';
+const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL || (isDev ? 'http://127.0.0.1:5175' : null);
 
 function createMainWindow() {
   const win = new BrowserWindow({
@@ -9,7 +12,7 @@ function createMainWindow() {
     height: 680,
     minWidth: 780,
     minHeight: 540,
-    backgroundColor: '#0f1713',
+    backgroundColor: '#0b110e',
     title: 'ALLY-JIS Conversation Seeder',
     autoHideMenuBar: true,
     webPreferences: {
@@ -27,28 +30,34 @@ function createMainWindow() {
   }
 }
 
-// Proxy API requests through Electron main process so calls to the centralized
-// backend never fail due to file:// Origin CORS restrictions.
 ipcMain.handle('api:request', async (_event, { url, method = 'GET', headers = {}, body }) => {
-  const response = await net.fetch(url, {
-    method,
-    headers,
-    body: body !== undefined ? body : undefined,
-  });
-
-  const text = await response.text();
-  let data = null;
   try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = { message: text || response.statusText };
-  }
+    const response = await net.fetch(url, {
+      method,
+      headers,
+      body: body !== undefined ? body : undefined,
+    });
 
-  return {
-    ok: response.ok,
-    status: response.status,
-    data,
-  };
+    const text = await response.text();
+    let data = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = { message: text || response.statusText };
+    }
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      data,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      status: 0,
+      data: { message: err?.message || 'Unable to reach centralized backend' },
+    };
+  }
 });
 
 app.whenReady().then(() => {
@@ -66,4 +75,3 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
-
